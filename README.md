@@ -1,46 +1,11 @@
-Sure! Here’s a shorter version of the README:
+# 📊 Tutoring Dashboard
 
-⸻
+This is a Dash web application that connects to Google Sheets and visualizes tutoring data. It displays monthly and yearly income summaries, student-specific statistics, and interactive charts — all in real time.
 
-📊 Tutoring Dashboard
+## ⚙️ Features
 
-A Dash web app that reads tutoring data from Google Sheets and displays income summaries, trends, and student-specific stats.
-
-⸻
-
-⚙️ Features
-	•	🔄 Live Google Sheets integration
-	•	📅 Monthly & yearly income summaries
-	•	🎯 Student-specific stats & search
-	•	📈 Interactive Plotly charts
-	•	🔘 Manual data refresh
-
-⸻
-
-🚀 Setup
-	1.	Install dependencies:
-
-pip install -r requirements.txt
-
-
-	2.	Add a .env file with your Google Sheet ID:
-
-SAMPLE_SPREADSHEET_ID=your_sheet_id
-
-
-	3.	Place keys.json (Google service account) in the project root.
-	4.	Run the app:
-
-python app.py
-
-
-
-⸻
-
-📝 Notes
-	•	Requires columns like Datum:, Stunden:, Lohn:, Name:
-	•	Uses Dash, Plotly, Bootstrap, and Google Sheets API
-
-⸻
-
-Let me know if you want a requirements.txt auto-generated.
+- 🔄 Live data sync from Google Sheets
+- 📅 Monthly & yearly income summaries
+- 🎯 Student search with detailed stats
+- 📈 Interactive Plotly charts
+- 🔘 Manual data refresh button
