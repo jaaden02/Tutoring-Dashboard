@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutoring Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header-bar">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1 class="header-title">Tutoring Dashboard</h1>
+                    <p class="header-subtitle">Real-time insights into your tutoring business</p>
+                </div>
+                <div class="header-right">
+                    <button id="refresh-btn" class="btn-refresh">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                    <span class="cache-badge">10s cache</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Key Metrics -->
+        <section class="metrics-grid">
+            <div class="metric-card">
+                <i class="bi bi-currency-euro metric-icon"></i>
+                <div class="metric-label">Total Revenue</div>
+                <div class="metric-value" id="total-revenue">€0.00</div>
+            </div>
+            <div class="metric-card">
+                <i class="bi bi-clock metric-icon"></i>
+                <div class="metric-label">Total Hours</div>
+                <div class="metric-value" id="total-hours">0h</div>
+            </div>
+            <div class="metric-card">
+                <i class="bi bi-graph-up metric-icon"></i>
+                <div class="metric-label">Avg Hourly Rate</div>
+                <div class="metric-value" id="avg-rate">€0.00</div>
+            </div>
+            <div class="metric-card">
+                <i class="bi bi-people metric-icon"></i>
+                <div class="metric-label">Students</div>
+                <div class="metric-value" id="unique-students">0</div>
+            </div>
+            <div class="metric-card">
+                <i class="bi bi-calendar-check metric-icon"></i>
+                <div class="metric-label">Total Sessions</div>
+                <div class="metric-value" id="total-sessions">0</div>
+            </div>
+            <div class="metric-card">
+                <i class="bi bi-hourglass-split metric-icon"></i>
+                <div class="metric-label">Avg Session Length</div>
+                <div class="metric-value" id="avg-session">0h</div>
+            </div>
+            <div class="metric-card metric-card-highlight">
+                <i class="bi bi-currency-euro metric-icon"></i>
+                <div class="metric-label">This Month Revenue</div>
+                <div class="metric-value" id="this-month-revenue">€0.00</div>
+            </div>
+            <div class="metric-card metric-card-highlight">
+                <i class="bi bi-clock metric-icon"></i>
+                <div class="metric-label">This Month Hours</div>
+                <div class="metric-value" id="this-month-hours">0h</div>
+            </div>
+        </section>
+
+        <!-- Student Search -->
+        <section class="search-section">
+            <div class="search-card">
+                <label class="filter-label">Search Student</label>
+                <input type="text" id="student-search" class="filter-input" placeholder="Enter student name...">
+                <div id="student-results" class="student-results"></div>
+            </div>
+        </section>
+
+        <!-- Date Filters -->
+        <section class="filters-section">
+            <div class="filter-card">
+                <label class="filter-label">Quick Range</label>
+                <select id="quick-range" class="filter-select">
+                    <option value="all">All Time</option>
+                    <option value="last7">Last 7 Days</option>
+                    <option value="last30">Last 30 Days</option>
+                    <option value="last90">Last 90 Days</option>
+                </select>
+            </div>
+            <div class="filter-card">
+                <label class="filter-label">Custom Start Date</label>
+                <input type="date" id="start-date" class="filter-input">
+            </div>
+            <div class="filter-card">
+                <label class="filter-label">Custom End Date</label>
+                <input type="date" id="end-date" class="filter-input">
+            </div>
+        </section>
+
+        <!-- Monthly Revenue Chart -->
+        <section class="chart-section">
+            <h2 class="section-title">Monthly Revenue</h2>
+            <div class="chart-container">
+                <canvas id="monthly-chart"></canvas>
+            </div>
+        </section>
+
+        <!-- Top Students Chart -->
+        <section class="chart-section">
+            <h2 class="section-title">Top 10 Students by Revenue</h2>
+            <div class="chart-container">
+                <canvas id="top-students-chart"></canvas>
+            </div>
+        </section>
+
+        <!-- Top Students Table -->
+        <section class="top-students-section">
+            <h2 class="section-title">All Students (Click for Details)</h2>
+            <div class="table-container">
+                <table id="top-students-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Student</th>
+                            <th>Revenue</th>
+                            <th>Hours</th>
+                            <th>Sessions</th>
+                            <th>Avg Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody id="top-students-body">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Student Details Modal -->
+        <div id="student-modal" class="modal">
+            <div class="modal-content">
+                <span class="modal-close">&times;</span>
+                <h2 id="modal-student-name">Student Name</h2>
+                <div id="modal-student-details">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

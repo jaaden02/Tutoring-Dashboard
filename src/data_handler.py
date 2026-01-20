@@ -5,8 +5,6 @@ from typing import Optional, Dict
 from datetime import datetime
 
 import pandas as pd
-from googleapiclient.discovery import build
-from google.oauth2 import service_account
 
 from .config import Config
 
@@ -25,11 +23,13 @@ class SheetsDataHandler:
         self.config = config or Config()
         self._cache: Optional[pd.DataFrame] = None
         self._last_fetch_time: float = 0
-        self._credentials = self._get_credentials()
+        self._credentials = None
 
     def _get_credentials(self):
         """Get and return service account credentials."""
         try:
+            # Lazy import to avoid heavy modules at startup
+            from google.oauth2 import service_account
             return service_account.Credentials.from_service_account_file(
                 self.config.SERVICE_ACCOUNT_FILE,
                 scopes=self.config.SCOPES
@@ -59,6 +59,10 @@ class SheetsDataHandler:
             return self._cache
 
         try:
+            if self._credentials is None:
+                self._credentials = self._get_credentials()
+            # Lazy import to avoid heavy modules at startup
+            from googleapiclient.discovery import build
             service = build("sheets", "v4", credentials=self._credentials)
             sheet = service.spreadsheets()
             result = sheet.values().get(
