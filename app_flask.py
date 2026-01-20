@@ -13,6 +13,47 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 data_handler = SheetsDataHandler()
 
+# Helpers for date filtering (define before routes)
+def _get_filter_params():
+    return {
+        'quick_range': request.args.get('quick_range', 'all'),
+        'start_date': request.args.get('start_date'),
+        'end_date': request.args.get('end_date'),
+    }
+
+def _apply_date_filter(df, params):
+    # Ensure Datum: is datetime for comparisons
+    if 'Datum:' in df.columns:
+        df['Datum:'] = pd.to_datetime(df['Datum:'], errors='coerce')
+        df = df.dropna(subset=['Datum:'])
+
+    quick = params.get('quick_range', 'all')
+    start = params.get('start_date')
+    end = params.get('end_date')
+
+    if quick and quick != 'all' and 'Datum:' in df.columns:
+        max_date = df['Datum:'].max()
+        if pd.isna(max_date):
+            return df
+        if quick == 'last7':
+            cutoff = max_date - pd.Timedelta(days=7)
+            return df[df['Datum:'] >= cutoff]
+        if quick == 'last30':
+            cutoff = max_date - pd.Timedelta(days=30)
+            return df[df['Datum:'] >= cutoff]
+        if quick == 'last90':
+            cutoff = max_date - pd.Timedelta(days=90)
+            return df[df['Datum:'] >= cutoff]
+        return df
+    elif start and end and 'Datum:' in df.columns:
+        start_dt = pd.to_datetime(start, errors='coerce')
+        end_dt = pd.to_datetime(end, errors='coerce')
+        if pd.isna(start_dt) or pd.isna(end_dt):
+            return df
+        return df[(df['Datum:'] >= start_dt) & (df['Datum:'] <= end_dt)]
+    else:
+        return df
+
 @app.route('/')
 def index():
     """Render main dashboard page"""
@@ -23,21 +64,8 @@ def get_metrics():
     """Get key metrics for dashboard"""
     try:
         df = data_handler.fetch_data()
-        
-        # Apply date filtering if provided
-        start_date = request.args.get('start_date')
-        end_date = request.args.get('end_date')
-        quick_range = request.args.get('quick_range', 'all')
-        
-        if quick_range != 'all':
-            if quick_range == 'last7':
-                df = df[df['Datum:'] >= (df['Datum:'].max() - pd.Timedelta(days=7))]
-            elif quick_range == 'last30':
-                df = df[df['Datum:'] >= (df['Datum:'].max() - pd.Timedelta(days=30))]
-            elif quick_range == 'last90':
-                df = df[df['Datum:'] >= (df['Datum:'].max() - pd.Timedelta(days=90))]
-        elif start_date and end_date:
-            df = df[(df['Datum:'] >= start_date) & (df['Datum:'] <= end_date)]
+        params = _get_filter_params()
+        df = _apply_date_filter(df, params)
         
         metrics = data_handler.get_key_metrics(df)
         return jsonify(metrics)
@@ -109,7 +137,7 @@ def student_search():
 
     # Limit to top 20 for autocomplete
     return jsonify({"results": results[:20]})
-    
+
 
 @app.route('/api/student-details/<student_name>')
 def get_student_details(student_name):
@@ -146,44 +174,3 @@ def refresh_data():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8050)
-
-# Helpers for date filtering
-def _get_filter_params():
-    return {
-        'quick_range': request.args.get('quick_range', 'all'),
-        'start_date': request.args.get('start_date'),
-        'end_date': request.args.get('end_date'),
-    }
-
-def _apply_date_filter(df, params):
-    # Ensure Datum: is datetime for comparisons
-    if 'Datum:' in df.columns:
-        df['Datum:'] = pd.to_datetime(df['Datum:'], errors='coerce')
-        df = df.dropna(subset=['Datum:'])
-
-    quick = params.get('quick_range', 'all')
-    start = params.get('start_date')
-    end = params.get('end_date')
-
-    if quick and quick != 'all' and 'Datum:' in df.columns:
-        max_date = df['Datum:'].max()
-        if pd.isna(max_date):
-            return df
-        if quick == 'last7':
-            cutoff = max_date - pd.Timedelta(days=7)
-            return df[df['Datum:'] >= cutoff]
-        if quick == 'last30':
-            cutoff = max_date - pd.Timedelta(days=30)
-            return df[df['Datum:'] >= cutoff]
-        if quick == 'last90':
-            cutoff = max_date - pd.Timedelta(days=90)
-            return df[df['Datum:'] >= cutoff]
-        return df
-    elif start and end and 'Datum:' in df.columns:
-        start_dt = pd.to_datetime(start, errors='coerce')
-        end_dt = pd.to_datetime(end, errors='coerce')
-        if pd.isna(start_dt) or pd.isna(end_dt):
-            return df
-        return df[(df['Datum:'] >= start_dt) & (df['Datum:'] <= end_dt)]
-    else:
-        return df

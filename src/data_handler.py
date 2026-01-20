@@ -330,9 +330,11 @@ class SheetsDataHandler:
                 "this_month_hours": 0,
             }
 
-        now = pd.Timestamp.now()
-        this_month = df[df["Datum:"].dt.to_period("M") == now.to_period("M")]
-        
+        # Use the most recent month present in the (filtered) data instead of calendar month
+        latest_date = df["Datum:"].max()
+        latest_month_mask = df["Datum:"].dt.to_period("M") == latest_date.to_period("M")
+        latest_month = df[latest_month_mask]
+
         total_revenue = df["Lohn:"].sum()
         total_hours = df["Stunden:"].sum()
         
@@ -343,8 +345,8 @@ class SheetsDataHandler:
             "unique_students": df["Name:"].nunique(),
             "total_sessions": len(df),
             "avg_session_length": df["Stunden:"].mean() if not df.empty else 0,
-            "this_month_revenue": this_month["Lohn:"].sum() if not this_month.empty else 0,
-            "this_month_hours": this_month["Stunden:"].sum() if not this_month.empty else 0,
+            "this_month_revenue": latest_month["Lohn:"].sum() if not latest_month.empty else 0,
+            "this_month_hours": latest_month["Stunden:"].sum() if not latest_month.empty else 0,
         }
 
     def filter_by_date(
