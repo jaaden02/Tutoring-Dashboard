@@ -111,15 +111,34 @@ def get_monthly_summary():
         # Fallback: no date column; return empty
         return jsonify({"months": [], "revenue": [], "hours": []})
 
-    grouped = df.groupby('YearMonth').agg({
-        'Lohn:': 'sum',
-        'Stunden:': 'sum'
-    }).reset_index().sort_values('YearMonth')
+    now_ts = pd.Timestamp.now()
+    completed = df[df['Datum:'] <= now_ts]
+    planned = df[df['Datum:'] > now_ts]
+
+    def agg(sub):
+        if sub.empty:
+            return pd.DataFrame(columns=['YearMonth', 'Lohn:', 'Stunden:'])
+        return sub.groupby('YearMonth').agg({
+            'Lohn:': 'sum',
+            'Stunden:': 'sum'
+        }).reset_index()
+
+    completed_g = agg(completed)
+    planned_g = agg(planned)
+
+    # Union of months to align arrays
+    months = sorted(set(completed_g['YearMonth'].tolist()) | set(planned_g['YearMonth'].tolist()))
+
+    def aligned(df_in, col):
+        mapping = dict(zip(df_in['YearMonth'], df_in[col]))
+        return [float(mapping.get(m, 0)) for m in months]
 
     return jsonify({
-        "months": grouped['YearMonth'].tolist(),
-        "revenue": [float(x) for x in grouped['Lohn:'].tolist()],
-        "hours": [float(x) for x in grouped['Stunden:'].tolist()],
+        "months": months,
+        "revenue": aligned(completed_g, 'Lohn:'),
+        "hours": aligned(completed_g, 'Stunden:'),
+        "planned_revenue": aligned(planned_g, 'Lohn:'),
+        "planned_hours": aligned(planned_g, 'Stunden:'),
     })
 
 @app.route('/api/student-search')

@@ -330,23 +330,36 @@ class SheetsDataHandler:
                 "this_month_hours": 0,
             }
 
-        # Use the most recent month present in the (filtered) data instead of calendar month
-        latest_date = df["Datum:"].max()
-        latest_month_mask = df["Datum:"].dt.to_period("M") == latest_date.to_period("M")
-        latest_month = df[latest_month_mask]
+        now_ts = pd.Timestamp.now()
 
-        total_revenue = df["Lohn:"].sum()
-        total_hours = df["Stunden:"].sum()
+        completed = df[df["Datum:"] <= now_ts]
+        planned = df[df["Datum:"] > now_ts]
+
+        # Use the most recent month present in completed data; if none, fall back to planned
+        latest_pool = completed if not completed.empty else planned
+        latest_date = latest_pool["Datum:"].max()
+        latest_month_mask = latest_pool["Datum:"].dt.to_period("M") == latest_date.to_period("M")
+        latest_month = latest_pool[latest_month_mask]
+
+        total_revenue = completed["Lohn:"].sum()
+        total_hours = completed["Stunden:"].sum()
+        planned_revenue = planned["Lohn:"].sum()
+        planned_hours = planned["Stunden:"].sum()
         
         return {
+            # Realized/completed metrics
             "total_revenue": total_revenue,
             "total_hours": total_hours,
             "avg_hourly_rate": total_revenue / total_hours if total_hours > 0 else 0,
             "unique_students": df["Name:"].nunique(),
-            "total_sessions": len(df),
-            "avg_session_length": df["Stunden:"].mean() if not df.empty else 0,
+            "total_sessions": len(completed),
+            "avg_session_length": completed["Stunden:"].mean() if not completed.empty else 0,
             "this_month_revenue": latest_month["Lohn:"].sum() if not latest_month.empty else 0,
             "this_month_hours": latest_month["Stunden:"].sum() if not latest_month.empty else 0,
+            # Planned/prospective metrics (future-dated)
+            "planned_revenue": planned_revenue,
+            "planned_hours": planned_hours,
+            "planned_sessions": len(planned),
         }
 
     def filter_by_date(

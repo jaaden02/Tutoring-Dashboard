@@ -115,6 +115,12 @@ class Dashboard {
     document.getElementById('avg-session').textContent = `${metrics.avg_session_length.toFixed(1)}h`;
     document.getElementById('this-month-revenue').textContent = `€${metrics.this_month_revenue.toFixed(2)}`;
     document.getElementById('this-month-hours').textContent = `${metrics.this_month_hours.toFixed(1)}h`;
+    if (document.getElementById('planned-sessions')) {
+      document.getElementById('planned-sessions').textContent = metrics.planned_sessions ?? 0;
+    }
+    if (document.getElementById('planned-revenue')) {
+      document.getElementById('planned-revenue').textContent = `€${(metrics.planned_revenue ?? 0).toFixed(2)}`;
+    }
 
     // Animate numbers
     this.animateMetrics();
@@ -274,6 +280,8 @@ class Dashboard {
     if (this.monthlyChart) {
       this.monthlyChart.destroy();
     }
+    const plannedRevenue = summary.planned_revenue || [];
+    const plannedHours = summary.planned_hours || [];
     this.monthlyChart = new Chart(ctx, {
       type: 'line',
       data: {
@@ -292,6 +300,24 @@ class Dashboard {
             data: summary.hours,
             borderColor: '#10b981',
             backgroundColor: 'rgba(16, 185, 129, 0.2)',
+            tension: 0.3,
+            yAxisID: 'y1',
+          },
+          {
+            label: 'Planned Revenue (€)',
+            data: plannedRevenue,
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.15)',
+            borderDash: [6, 4],
+            tension: 0.3,
+            yAxisID: 'y',
+          },
+          {
+            label: 'Planned Hours',
+            data: plannedHours,
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.12)',
+            borderDash: [6, 4],
             tension: 0.3,
             yAxisID: 'y1',
           }
