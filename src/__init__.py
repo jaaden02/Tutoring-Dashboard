@@ -1,15 +1,14 @@
-"""Tutoring Dashboard Package."""
-from .app import TutoringDashboardApp, create_app
+"""Tutoring Dashboard package public exports.
+
+Only expose modules that exist in this trimmed HTML-only version to avoid
+import errors (e.g., when used as a package).
+"""
 from .config import Config, get_config
 from .data_handler import SheetsDataHandler
-from .callbacks import DashboardCallbacks
 
 __all__ = [
-    "TutoringDashboardApp",
-    "create_app",
     "Config",
     "get_config",
     "SheetsDataHandler",
-    "DashboardCallbacks",
 ]
 __version__ = "2.0.0"

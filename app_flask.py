@@ -22,37 +22,38 @@ def _get_filter_params():
     }
 
 def _apply_date_filter(df, params):
-    # Ensure Datum: is datetime for comparisons
-    if 'Datum:' in df.columns:
-        df['Datum:'] = pd.to_datetime(df['Datum:'], errors='coerce')
-        df = df.dropna(subset=['Datum:'])
-
-    quick = params.get('quick_range', 'all')
-    start = params.get('start_date')
-    end = params.get('end_date')
-
-    if quick and quick != 'all' and 'Datum:' in df.columns:
-        max_date = df['Datum:'].max()
-        if pd.isna(max_date):
-            return df
-        if quick == 'last7':
-            cutoff = max_date - pd.Timedelta(days=7)
-            return df[df['Datum:'] >= cutoff]
-        if quick == 'last30':
-            cutoff = max_date - pd.Timedelta(days=30)
-            return df[df['Datum:'] >= cutoff]
-        if quick == 'last90':
-            cutoff = max_date - pd.Timedelta(days=90)
-            return df[df['Datum:'] >= cutoff]
+    if 'Datum:' not in df.columns:
         return df
-    elif start and end and 'Datum:' in df.columns:
-        start_dt = pd.to_datetime(start, errors='coerce')
-        end_dt = pd.to_datetime(end, errors='coerce')
-        if pd.isna(start_dt) or pd.isna(end_dt):
-            return df
-        return df[(df['Datum:'] >= start_dt) & (df['Datum:'] <= end_dt)]
-    else:
+
+    # Normalize date column once for all filters
+    df = df.copy()
+    df['Datum:'] = pd.to_datetime(df['Datum:'], errors='coerce')
+    df = df.dropna(subset=['Datum:'])
+
+    quick = params.get('quick_range', 'all') or 'all'
+    start_raw = params.get('start_date')
+    end_raw = params.get('end_date')
+
+    start_dt = pd.to_datetime(start_raw, errors='coerce') if start_raw else None
+    end_dt = pd.to_datetime(end_raw, errors='coerce') if end_raw else None
+
+    # Relative shortcuts - calculate from TODAY, not max date
+    if quick in {'last7', 'last30', 'last90'}:
+        today = pd.Timestamp.now().normalize()
+        days = {'last7': 7, 'last30': 30, 'last90': 90}[quick]
+        cutoff = today - pd.Timedelta(days=days)
+        return df[df['Datum:'] >= cutoff]
+
+    # Custom or explicit range (inclusive end)
+    if start_dt is not None or end_dt is not None:
+        if start_dt is not None:
+            df = df[df['Datum:'] >= start_dt]
+        if end_dt is not None:
+            inclusive_end = end_dt + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
+            df = df[df['Datum:'] <= inclusive_end]
         return df
+
+    return df
 
 @app.route('/')
 def index():
@@ -63,11 +64,11 @@ def index():
 def get_metrics():
     """Get key metrics for dashboard"""
     try:
-        df = data_handler.fetch_data()
+        base_df = data_handler.fetch_data()
         params = _get_filter_params()
-        df = _apply_date_filter(df, params)
-        
-        metrics = data_handler.get_key_metrics(df)
+        filtered_df = _apply_date_filter(base_df, params)
+
+        metrics = data_handler.get_key_metrics(filtered_df, base_df=base_df)
         return jsonify(metrics)
     except Exception as e:
         logger.error(f"Error fetching metrics: {e}")

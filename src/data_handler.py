@@ -306,19 +306,23 @@ class SheetsDataHandler:
             "total_income": df["Lohn:"].sum() if not df.empty else 0,
         }
 
-    def get_key_metrics(self, df: Optional[pd.DataFrame] = None) -> Dict:
-        """Calculate comprehensive key metrics for dashboard overview.
-        
-        Args:
-            df: Input DataFrame. Uses cached data if None.
-            
-        Returns:
-            Dictionary with key performance metrics.
+    def get_key_metrics(
+        self,
+        df: Optional[pd.DataFrame] = None,
+        base_df: Optional[pd.DataFrame] = None,
+    ) -> Dict:
+        """Calculate dashboard metrics.
+
+        df: filtered data (user-selected range).
+        base_df: unfiltered data for outlooks and current-month values so those stay stable.
         """
         if df is None:
             df = self.fetch_data()
+        if base_df is None:
+            base_df = df
 
-        if df.empty:
+        # Handle empty base data
+        if base_df.empty:
             return {
                 "total_revenue": 0,
                 "total_hours": 0,
@@ -328,38 +332,43 @@ class SheetsDataHandler:
                 "avg_session_length": 0,
                 "this_month_revenue": 0,
                 "this_month_hours": 0,
+                "planned_revenue": 0,
+                "planned_hours": 0,
+                "planned_sessions": 0,
             }
 
-        now_ts = pd.Timestamp.now()
+        # Use timezone-naive timestamp to match dataframe dates
+        now_ts = pd.Timestamp.now().tz_localize(None)
 
-        completed = df[df["Datum:"] <= now_ts]
-        planned = df[df["Datum:"] > now_ts]
+        # Filtered (user-selected range) - affects historical totals
+        filtered_completed = df[df["Datum:"] <= now_ts] if not df.empty else pd.DataFrame()
 
-        # Use the most recent month present in completed data; if none, fall back to planned
-        latest_pool = completed if not completed.empty else planned
-        latest_date = latest_pool["Datum:"].max()
-        latest_month_mask = latest_pool["Datum:"].dt.to_period("M") == latest_date.to_period("M")
-        latest_month = latest_pool[latest_month_mask]
+        # Unfiltered for outlooks and current month
+        base_completed = base_df[base_df["Datum:"] <= now_ts]
+        base_planned = base_df[base_df["Datum:"] > now_ts]
 
-        total_revenue = completed["Lohn:"].sum()
-        total_hours = completed["Stunden:"].sum()
-        planned_revenue = planned["Lohn:"].sum()
-        planned_hours = planned["Stunden:"].sum()
-        
+        # Current month should be computed from unfiltered completed data only
+        if not base_completed.empty:
+            this_month_mask = base_completed["Datum:"].dt.to_period("M") == now_ts.to_period("M")
+            this_month = base_completed[this_month_mask]
+        else:
+            this_month = pd.DataFrame()
+
+        total_revenue = float(filtered_completed["Lohn:"].sum()) if not filtered_completed.empty else 0.0
+        total_hours = float(filtered_completed["Stunden:"].sum()) if not filtered_completed.empty else 0.0
+
         return {
-            # Realized/completed metrics
             "total_revenue": total_revenue,
             "total_hours": total_hours,
             "avg_hourly_rate": total_revenue / total_hours if total_hours > 0 else 0,
-            "unique_students": df["Name:"].nunique(),
-            "total_sessions": len(completed),
-            "avg_session_length": completed["Stunden:"].mean() if not completed.empty else 0,
-            "this_month_revenue": latest_month["Lohn:"].sum() if not latest_month.empty else 0,
-            "this_month_hours": latest_month["Stunden:"].sum() if not latest_month.empty else 0,
-            # Planned/prospective metrics (future-dated)
-            "planned_revenue": planned_revenue,
-            "planned_hours": planned_hours,
-            "planned_sessions": len(planned),
+            "unique_students": df["Name:"].nunique() if not df.empty else 0,
+            "total_sessions": len(filtered_completed),
+            "avg_session_length": filtered_completed["Stunden:"].mean() if not filtered_completed.empty else 0,
+            "this_month_revenue": this_month["Lohn:"].sum() if not this_month.empty else 0,
+            "this_month_hours": this_month["Stunden:"].sum() if not this_month.empty else 0,
+            "planned_revenue": base_planned["Lohn:"].sum() if not base_planned.empty else 0,
+            "planned_hours": base_planned["Stunden:"].sum() if not base_planned.empty else 0,
+            "planned_sessions": len(base_planned),
         }
 
     def filter_by_date(
