@@ -1,40 +1,57 @@
-# Tutoring Dashboard
+# Tutoring Dashboard (Flask + HTML/JS)
 
-A slim guide to run and use the dashboard.
+Modern tutoring dashboard using Flask for APIs and vanilla HTML/CSS/JS for the UI.
 
-## Overview
-- Dash app reading Google Sheets (revenue, lessons, top students).
-- Smart cache (10s), date filters (Last 30/90, YTD, All, Custom), search by student.
-- Charts: monthly income, top earners; data table with filtering/sorting.
+## Quick Start
+```bash
+cd /Users/jasperaden/Documents/Programmieren/WebApps/Tutoring-Dashboard
+source ../.venv/bin/activate
+python -m pip install -r requirements.txt
+python app_flask.py
+```
+Then open http://localhost:8050
 
-## Quick start
-1) From `WebApps`, activate venv: `source .venv/bin/activate`
-2) Install deps: `pip install -r Tutoring-Dashboard/requirements.txt`
-3) Credentials/config:
-   - `keys.json` in `Tutoring-Dashboard/`
-   - Copy `.env.example` to `.env`; set `SAMPLE_SPREADSHEET_ID`, `PORT`, `HOST`, `DEBUG`
-4) Run (from WebApps): `python run.py`
-5) Open: http://127.0.0.1:8050/
+## Configuration
+- Copy `.env.example` to `.env` and set:
+   - `SPREADSHEET_ID` (Google Sheet)
+   - `SHEET_RANGE` (e.g., `Sheet1!A:Z`)
+   - `SERVICE_ACCOUNT_FILE` (path to `keys.json`)
+- Place `keys.json` in the project root or point `SERVICE_ACCOUNT_FILE` to its location.
 
-## Usage
-- Refresh data with the top button.
-- Time filters: pick preset or custom range; all charts/table update.
-- Search: type part of a student name to see their summary.
-- Table: filter/sort inline; page size 10.
+## Features
+- KPIs: total/avg metrics, latest-month metrics, upcoming sessions & prospective income
+- Filters: quick ranges and custom date window
+- Charts: monthly revenue/hours (actual vs planned), top students
+- Search: student autocomplete + details modal
+- Auto-refresh (60s) and manual refresh button
 
-## Structure
-- Entry: `run.py`
-- App shell: `src/app.py`; callbacks: `src/callbacks.py`; data: `src/data_handler.py`; config: `src/config.py`
-- Styling: `assets/custom.css`
-- Tests: `tests/`
+## API Endpoints
+- `/` — HTML dashboard
+- `/api/metrics` — KPIs (supports `quick_range`, `start_date`, `end_date`)
+- `/api/monthly-summary` — Monthly actual vs planned revenue/hours
+- `/api/top-students` — Top students by revenue
+- `/api/student-details/<name>` — Detail view with recent sessions
+- `/api/student-search` — Autocomplete names
+- `/api/refresh` — Force data refresh
+
+## Project Structure
+- `app_flask.py` — Flask app and routes
+- `src/data_handler.py` — Google Sheets fetch + metrics (actual/planned split)
+- `static/` — CSS/JS assets
+- `templates/index.html` — Dashboard UI
+- `run_html.sh` — Helper script to start the app
+- `tests/` — Pytest placeholder
+
+## Data Expectations
+- Uses column names with colons from the sheet (e.g., `Name:`, `Datum:`, `Stunden:`, `Lohn:`).
+- Planned vs completed split is based on `Datum:` relative to now.
 
 ## Testing
-From `Tutoring-Dashboard/` (venv active):
-```
-../.venv/bin/python -m pytest
+```bash
+cd /Users/jasperaden/Documents/Programmieren/WebApps/Tutoring-Dashboard
+source ../.venv/bin/activate
+python -m pytest
 ```
 
-## Troubleshooting
-- Sheets errors: verify `keys.json` path and `SAMPLE_SPREADSHEET_ID`.
-- Empty charts/table: check date range filter.
-- Reload path errors: reloader disabled in app run settings.
+## Notes
+- This repo now uses the Flask/HTML version as main. Legacy Dash assets have been removed.
