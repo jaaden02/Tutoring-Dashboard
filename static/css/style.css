@@ -43,6 +43,41 @@ body {
   animation: slideDown 0.4s ease;
 }
 
+.pill-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.pill-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(58,134,255,0.1), rgba(16,185,129,0.1));
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  border-radius: 999px;
+  box-shadow: 0 1px 8px var(--shadow);
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.pill-card i {
+  color: var(--primary);
+}
+
+.pill-label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.pill-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--dark);
+}
+
 @keyframes slideDown {
   from {
     opacity: 0;

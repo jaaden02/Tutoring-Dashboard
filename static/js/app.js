@@ -121,6 +121,11 @@ class Dashboard {
     if (document.getElementById('planned-revenue')) {
       document.getElementById('planned-revenue').textContent = `€${(metrics.planned_revenue ?? 0).toFixed(2)}`;
     }
+    // Header pills
+    const pillSessions = document.getElementById('pill-planned-sessions');
+    if (pillSessions) pillSessions.textContent = metrics.planned_sessions ?? 0;
+    const pillRevenue = document.getElementById('pill-planned-revenue');
+    if (pillRevenue) pillRevenue.textContent = `€${(metrics.planned_revenue ?? 0).toFixed(2)}`;
 
     // Animate numbers
     this.animateMetrics();
