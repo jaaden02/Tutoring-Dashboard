@@ -1,6 +1,7 @@
 .qodo
 .env
-venv
+venv/
+.venv/
 __pycache__/
 keys.json
 .pytest_cache/
